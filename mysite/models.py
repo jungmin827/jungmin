@@ -1,63 +1,62 @@
-from django.db import models
+import uuid
+from django.db import models # type: ignore
+from django.contrib.auth.models import AbstractUser # type: ignore
 
-class User(models.Model):
-    user_id = models.CharField(max_length=256, primary_key=True)
-    user_pw = models.CharField(max_length=256)
-    user_name = models.CharField(max_length=256)
-    GENDER_CHOICES = (
-        ('M', 'Male'),
-        ('F', 'Female'),
-    )
-    gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
-    user_birth = models.DateField()
-    profile_image_url = models.CharField(max_length=256)
+
+class User(AbstractUser):
+    birthday = models.DateField(null=True, blank=True)
+    gender = models.CharField(max_length=10, choices=(('M', 'Male'), ('F', 'Female')), null=True, blank=True)
+    profile_pic = models.ImageField(upload_to='profile_pics', null=True, blank=True)
 
 class Review(models.Model):
-    review_id = models.CharField(max_length=256, primary_key=True)
-    date = models.DateTimeField(auto_now_add=True)
-    contents = models.CharField(max_length=256)    
+    review_id = models.AutoField(primary_key=True)
+    date = models.DateField(null=True)
+    contents = models.CharField(max_length=191, null=True)
 
-class Place_Type(models.Model):
-    type_id = models.CharField(max_length=256, primary_key=True)
-    type_name = models.CharField(max_length=256)
+class PlaceType(models.Model):
+    type_id = models.AutoField(primary_key=True)
+    type_name = models.CharField(max_length=191, null=True)
 
 class Region(models.Model):
     region_id = models.AutoField(primary_key=True)
-    region_addr = models.CharField(max_length=45)
+    region_addr = models.CharField(max_length=45, null=True)
 
 class Place(models.Model):
-    place_id = models.CharField(max_length=256, primary_key=True)
-    place_name = models.CharField(max_length=256)
-    place_addr = models.CharField(max_length=256)
-    place_image_url = models.CharField(max_length=256)
-    type_id = models.ForeignKey(Place_Type, on_delete=models.CASCADE)
-    review_id = models.ForeignKey(Review, on_delete=models.CASCADE)
-    region_id = models.ForeignKey(Region, on_delete=models.CASCADE)
+    place_id = models.AutoField(primary_key=True)
+    place_name = models.CharField(max_length=191, null=True)
+    place_addr = models.CharField(max_length=191, null=True)
+    place_image_url = models.CharField(max_length=191, null=True)
+    type_id = models.ForeignKey(PlaceType, on_delete=models.CASCADE, null=True)
+    review = models.OneToOneField(Review, on_delete=models.CASCADE, null=True, blank=True, related_name='place')
+    region_id = models.ForeignKey(Region, on_delete=models.CASCADE, null=True)
+    menu = models.CharField(max_length=191, null=True)
+    call_num = models.CharField(max_length=191, null=True)
+    BDay_time = models.CharField(max_length=191, null=True)
+    place_url = models.CharField(max_length=191, null=True)
+    type_details = models.CharField(max_length=191, null=True)
 
 class Like(models.Model):
-    like_id = models.CharField(max_length=256, primary_key=True)
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
-    region_id = models.ForeignKey(Region, on_delete=models.CASCADE)
-    place_id = models.ForeignKey(Place, on_delete=models.CASCADE)
-    type_id = models.ForeignKey(Place_Type, on_delete=models.CASCADE)
+    like_id = models.AutoField(primary_key=True)
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    place_id = models.ForeignKey(Place, on_delete=models.CASCADE, null=True)
+
 
 class TestQ(models.Model):
-    TQ_id = models.CharField(max_length=256, primary_key=True)
-    contents = models.CharField(max_length=256)
+    TQ_id = models.AutoField(primary_key=True)
+    contents = models.CharField(max_length=191, null=True)
 
 class Keyword(models.Model):
-    kw_id = models.CharField(max_length=256, primary_key=True)
-    kw_name = models.CharField(max_length=256)
-    TQ_id = models.ForeignKey(TestQ, on_delete=models.CASCADE)
+    kw_id = models.AutoField(primary_key=True)
+    kw_name = models.CharField(max_length=191, null=True)
+    TQ_id = models.ForeignKey(TestQ, on_delete=models.CASCADE, null=True)
 
-class Place_Keyword(models.Model):
-    kw_id = models.ForeignKey(Keyword, on_delete=models.CASCADE)
-    place_id = models.ForeignKey(Place, on_delete=models.CASCADE)
-    type_id = models.ForeignKey(Place_Type, on_delete=models.CASCADE)
+class PlaceKeyword(models.Model):
+    kw_id = models.ForeignKey(Keyword, on_delete=models.CASCADE, null=True, related_name='place_keywords')
+    place_id = models.ForeignKey(Place, on_delete=models.CASCADE, null=True)
+    type_id = models.ForeignKey(PlaceType, on_delete=models.CASCADE, null=True)
+    TQ_id = models.ForeignKey(TestQ, on_delete=models.CASCADE, null=True, related_name='place_keywords')
 
-class User_Keyword(models.Model):
-    kw_id = models.ForeignKey(Keyword, on_delete=models.CASCADE)
-    TQ_id = models.ForeignKey(TestQ, on_delete=models.CASCADE)
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
-
-
+class UserKeyword(models.Model):
+    kw_id = models.ForeignKey(Keyword, on_delete=models.CASCADE, null=True)
+    TQ_id = models.ForeignKey(TestQ, on_delete=models.CASCADE, null=True)
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE, null=True)

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>로그인 및 회원가입</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+<style>
+    body { font-family: 'Roboto', 'Noto Sans KR', Arial, sans-serif; background-color: #f0f4f8; color: #333; }
+    .container { max-width: 400px; margin: auto; padding: 20px; background-color: #fff; border-radius: 12px; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08); }
+    h1 { text-align: center; margin-bottom: 20px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 5px; }
+    .form-group input, .form-group select { width: calc(100% - 20px); padding: 10px; border: 1px solid #d1d5da; border-radius: 8px; box-sizing: border-box; background-color: #f8f9fa; }
+    .button { cursor: pointer; width: 100%; padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 8px; font-size: 16px; transition: background-color 0.3s ease; }
+    .button:hover { background-color: #0056b3; }
+    .switch { text-align: center; margin-top: 10px; }
+    .switch a { color: #007bff; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>로그인</h1>
+    <form id="loginForm">
+        <div class="form-group">
+            <label for="loginEmail">이메일</label>
+            <input type="email" id="loginEmail" name="loginEmail" placeholder="이메일을 입력하세요" required>
+        </div>
+        <div class="form-group">
+            <label for="loginPassword">비밀번호</label>
+            <input type="password" id="loginPassword" name="loginPassword" placeholder="비밀번호를 입력하세요" required>
+        </div>
+        <button type="submit" class="button">로그인</button>
+    </form>
+    <div class="switch">
+        <p>아직 계정이 없으신가요? <a href="#" onclick="switchForm('signupForm')">회원가입</a></p>
+    </div>
+</div>
+
+<div class="container" style="margin-top: 20px;">
+    <h1>회원가입</h1>
+    <form id="signupForm" style="display: none;">
+        <div class="form-group">
+            <label for="signupUsername">아이디</label>
+            <input type="text" id="signupUsername" name="signupUsername" placeholder="아이디를 입력하세요" required>
+        </div>
+        <div class="form-group">
+            <label for="signupProfileImage">프로필 이미지</label>
+            <input type="file" id="signupProfileImage" name="signupProfileImage" accept="image/*">
+        </div>
+        <div class="form-group">
+            <label for="signupGender">성별</label>
+            <select id="signupGender" name="signupGender">
+                <option value="male">남자</option>
+                <option value="female">여자</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="signupBirth">생일</label>
+            <input type="date" id="signupBirth" name="signupBirth" required>
+        </div>
+        <div class="form-group">
+            <label for="signupName">이름</label>
+            <input type="text" id="signupName" name="signupName" placeholder="이름을 입력하세요" required>
+        </div>
+        <div class="form-group">
+            <label for="signupEmail">이메일</label>
+            <input type="email" id="signupEmail" name="signupEmail" placeholder="이메일을 입력하세요" required>
+        </div>
+        <div class="form-group">
+            <label for="signupPassword">비밀번호</label>
+            <input type="password" id="signupPassword" name="signupPassword" placeholder="비밀번호를 입력하세요" required>
+        </div>
+        <button type="submit" class="button">회원가입</button>
+    </form>
+    <div class="switch">
+        <p>이미 계정이 있으신가요? <a href="#" onclick="switchForm('loginForm')">로그인</a></p>
+    </div>
+</div>
+
+<script>
+function switchForm(formId) {
+    var loginForm = document.getElementById("loginForm");
+    var signupForm = document.getElementById("signupForm");
+
+    if (formId === "loginForm") {
+        loginForm.style.display = "block";
+        signupForm.style.display = "none";
+    } else if (formId === "signupForm") {
+        loginForm.style.display = "none";
+        signupForm.style.display = "block";
+    }
+}
+
+document.getElementById("loginForm").addEventListener("submit", function(event) {
+    event.preventDefault();
+    var email = document.getElementById("loginEmail").value;
+    var password = document.getElementById("loginPassword").value;
+    // 로그인 기능 추가
+    alert("로그인 성공!");
+});
+
+document.getElementById("signupForm").addEventListener("submit", function(event) {
+    event.preventDefault();
+    var username = document.getElementById("signupUsername").value;
+    var profileImage = document.getElementById("signupProfileImage").value;
+    var gender = document.getElementById("signupGender").value;
+    var birth = document.getElementById("signupBirth").value;
+    var name = document.getElementById("signupName").value;
+    var email = document.getElementById("signupEmail").value;
+    var password = document.getElementById("signupPassword").value;
+    // 회원가입 기능 추가
+    alert("회원가입 완료!");
+});
+</script>
+
+</body>
+</html>
