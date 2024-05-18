@@ -1,6 +1,7 @@
 import uuid
 from django.db import models # type: ignore
 from django.contrib.auth.models import AbstractUser # type: ignore
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -10,7 +11,7 @@ class User(AbstractUser):
 
 class Review(models.Model):
     review_id = models.AutoField(primary_key=True)
-    date = models.DateField(null=True)
+    date = models.CharField(max_length=20, null=True)
     contents = models.CharField(max_length=191, null=True)
 
 class PlaceType(models.Model):
@@ -22,18 +23,18 @@ class Region(models.Model):
     region_addr = models.CharField(max_length=45, null=True)
 
 class Place(models.Model):
-    place_id = models.AutoField(primary_key=True)
+    code = models.AutoField(primary_key=True)
     place_name = models.CharField(max_length=191, null=True)
     place_addr = models.CharField(max_length=191, null=True)
     place_image_url = models.CharField(max_length=191, null=True)
     type_id = models.ForeignKey(PlaceType, on_delete=models.CASCADE, null=True)
-    review = models.OneToOneField(Review, on_delete=models.CASCADE, null=True, blank=True, related_name='place')
+    review_id = models.OneToOneField(Review, on_delete=models.CASCADE, null=True, blank=True, related_name='place')
     region_id = models.ForeignKey(Region, on_delete=models.CASCADE, null=True)
     menu = models.CharField(max_length=191, null=True)
-    call_num = models.CharField(max_length=191, null=True)
-    BDay_time = models.CharField(max_length=191, null=True)
+    callnum = models.CharField(max_length=191, null=True)
+    Bday_time = models.CharField(max_length=191, null=True)
     place_url = models.CharField(max_length=191, null=True)
-    type_details = models.CharField(max_length=191, null=True)
+    
 
 class Like(models.Model):
     like_id = models.AutoField(primary_key=True)
@@ -59,4 +60,4 @@ class PlaceKeyword(models.Model):
 class UserKeyword(models.Model):
     kw_id = models.ForeignKey(Keyword, on_delete=models.CASCADE, null=True)
     TQ_id = models.ForeignKey(TestQ, on_delete=models.CASCADE, null=True)
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)

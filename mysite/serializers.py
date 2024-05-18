@@ -41,11 +41,6 @@ class RegionSerializer(serializers.ModelSerializer):
         model = Region
         fields = '__all__' 
 
-class RegionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Region
-        fields = '__all__' 
-
 class LikeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Like
