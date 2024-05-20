@@ -1,3 +1,4 @@
+import datetime
 from pyexpat.errors import messages
 from django import forms
 from django.http import JsonResponse # type: ignore
@@ -10,7 +11,6 @@ from .models import *
 from .serializers import *
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
-
 import bcrypt
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -154,8 +154,120 @@ def user_profile(request):
         return render(request, 'user_profile.html', {'user': user, 'form': form, 'password_form': password_form})
 
 
-# 여행지 선택
+# 여행 기간 선택 폼
+class TripDurationForm(forms.Form):
+    start_date = forms.DateField(label = "여행 시작일")
+    end_date = forms.DateField(label = "여행 종료일")
+
+
+def main_view(request):
+    if request.method == 'POST':
+        step = request.POST.get('step')
+        
+        if step == '1':  # 여행지 선택
+            region_id = request.POST.get('region')
+            request.session['region_id'] = region_id
+            return redirect('main_view')
+        
+        elif step == '2':  # 여행 기간 선택
+            start_date = request.POST.get('start_date')
+            end_date = request.POST.get('end_date')
+            request.session['start_date'] = start_date
+            request.session['end_date'] = end_date
+            return redirect('main_view')
+        
+        elif step == '3':  # 여행 타입 선택
+            place_type_id = request.POST.get('type')
+            request.session['place_type_id'] = place_type_id
+            return redirect('main_view')
+        
+        elif step == '4':  # 타입별 키워드 선택
+            selected_keywords = request.POST.getlist('keywords')
+            request.session['keywords'] = selected_keywords
+            return redirect('main_view')
+    
+    region_id = request.session.get('region_id')
+    start_date = request.session.get('start_date')
+    end_date = request.session.get('end_date')
+    place_type_id = request.session.get('place_type_id')
+    selected_keywords = request.session.get('keywords')
+
+    if not region_id:
+        regions = Region.objects.all()
+        return render(request, 'place_select.html', {'regions': regions, 'step': 1})
+    
+    elif not start_date or not end_date:
+        return render(request, 'trip_duration_select.html', {'step': 2})
+    
+    elif not place_type_id:
+        place_types = PlaceType.objects.all()
+        return render(request, 'type_select.html', {'place_types': place_types, 'step': 3})
+    
+    elif not selected_keywords:
+        keywords = Keyword.objects.filter(placekeywords__type_id=place_type_id).distinct()
+        return render(request, 'keyword_select.html', {'keywords': keywords, 'step': 4})
+
+    else:
+        start_date = datetime.strptime(start_date, '%Y-%m-%d')
+        end_date = datetime.strptime(end_date, '%Y-%m-%d')
+        num_days = (end_date - start_date).days + 1
+        num_places_to_show = num_days * 3 + (num_days - 1)
+        
+        places = Place.objects.filter(
+            region_id=region_id,
+            type_id=place_type_id,
+            placekeywords__kw_id__in=selected_keywords
+        ).distinct()[:num_places_to_show]
+
+        map_markers = [{'lat': place.latitude, 'lng': place.longitude, 'name': place.name} for place in places]
+
+        return render(request, 'map.html', {
+            'map_markers': map_markers,
+            'places': places,
+        })
+
+
+# 여행지 세부 정보
+def place_detail(request, place_id):
+    place = get_object_or_404(Place, place_id=place_id)
+    is_liked = False
+    if request.user.is_authenticated:
+        if Like.objects.filter(user_id=request.user, place_id=place).exists():
+            is_liked = True
+    return render(request, 'place_detail.html', {'place': place, 'is_liked': is_liked})
+
+
+# '좋아요' 기능
+@login_required
+def like_place(request, place_id):
+    if request.method == 'POST':
+        place = Place.objects.get(pk=place_id)
+        if not Like.objects.filter(user=request.user, place=place).exists():
+            Like.objects.create(user=request.user, place=place)
+            return JsonResponse({'message': "'좋아요' 저장!"})
+        else:
+            return JsonResponse({'message': "이미 '좋아요'를 누른 항목입니다."})
+
+
+# '좋아요' 목록 조회
+@login_required
+def view_likes(request):
+    liked_place = Like.objects.filter(user_id=request.user) 
+    return render(request, 'view_likes.html', {'liked_place': liked_place})
+
+
+# '좋아요' 삭제
+@login_required
+def unlike_place(request, place_id):
+    if request.method == 'POST':
+        place = Place.objects.get(pk=place_id)
+        Like.objects.filter(user_id=request.user, place_id=place).delete()
+        return JsonResponse({'message': "'좋아요'가 삭제되었습니다."})
+    
+
+
 '''
+# 여행지 선택
 def place_list(request):
     places = Place.objects.all()
     regions = Region.objects.all()
@@ -174,7 +286,7 @@ def place_list(request):
             filtered_places = filtered_places.filter(place_name__in=selected_keywords)
         return render(request, 'place_list.html', {'places': filtered_places, 'regions': regions, 'place_types': place_types})
     return render(request, 'place_list.html', {'places': places, 'regions': regions, 'place_types': place_types})
-'''
+
 
 
 # 여행 지역 선택
@@ -188,12 +300,6 @@ def place_select(request):
     # 모든 지역의 목록을 보여주기
     regions = Region.objects.all()
     return render(request, 'place_select.html', {'regions': regions})
-
-
-# 여행 기간 선택 폼
-class TripDurationForm(forms.Form):
-    start_date = forms.DateField(label = "여행 시작일")
-    end_date = forms.DateField(label = "여행 종료일")
 
 
 # 여행지 타입(place_type) 선택
@@ -272,44 +378,4 @@ def show_places_on_map(request):
             return render(request, 'map.html', {'map_markers': map_markers})
     
     return render(request, 'map.html', {'trip_duration_form': trip_duration_form})
-
-
-# 여행지 세부 정보
-def place_detail(request, place_id):
-    place = get_object_or_404(Place, place_id=place_id)
-    is_liked = False
-    if request.user.is_authenticated:
-        if Like.objects.filter(user_id=request.user, place_id=place).exists():
-            is_liked = True
-    return render(request, 'place_detail.html', {'place': place, 'is_liked': is_liked})
-
-
-# '좋아요' 기능
-@login_required
-def like_place(request, place_id):
-    if request.method == 'POST':
-        place = Place.objects.get(pk=place_id)
-        if not Like.objects.filter(user=request.user, place=place).exists():
-            Like.objects.create(user=request.user, place=place)
-            return JsonResponse({'message': "'좋아요' 저장!"})
-        else:
-            return JsonResponse({'message': "이미 '좋아요'를 누른 항목입니다."})
-
-
-# '좋아요' 목록 조회
-@login_required
-def view_likes(request):
-    liked_place = Like.objects.filter(user_id=request.user) 
-    return render(request, 'view_likes.html', {'liked_place': liked_place})
-
-
-# '좋아요' 삭제
-@login_required
-def unlike_place(request, place_id):
-    if request.method == 'POST':
-        place = Place.objects.get(pk=place_id)
-        Like.objects.filter(user_id=request.user, place_id=place).delete()
-        return JsonResponse({'message': "'좋아요'가 삭제되었습니다."})
-    
-
-# 최단 경로 보이기
+'''
