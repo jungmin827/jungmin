@@ -9,7 +9,22 @@ class CustomUserCreationForm(UserCreationForm):
     class Meta:
         model = User
         fields = ['username', 'password1', 'password2', 'profile_pic', 'gender', 'birthday', 'email']
+
+    '''
+    def clean_id(self):
+        user_id = self.cleaned_data['user_id']
+        if User.objects.filter(user_id=user_id).exists():
+            raise forms.ValidationError("이미 사용 중인 아이디입니다.")
+        return user_id
+    '''
     
+    def clean(self):
+        cleaned_data = super().clean()
+        user_id = cleaned_data.get('id')
+        if User.objects.filter(id=user_id).exists():
+            raise forms.ValidationError("이미 사용 중인 아이디입니다.")
+        return user_id
+        
     def clean_password2(self):
         password1 = self.cleaned_data.get("password1")
         password2 = self.cleaned_data.get("password2")
