@@ -1,4 +1,5 @@
 import datetime
+import heapq
 from pyexpat.errors import messages
 from django import forms
 from django.http import JsonResponse # type: ignore
@@ -66,7 +67,7 @@ def signup(request):
             user.set_password(hashed_password)
             user.save()
             login(request, user)
-            return redirect('home')
+            return redirect('main_view')
     else:
         form = CustomUserCreationForm()
     return render(request, 'signup.html', {'form': form})
@@ -77,7 +78,7 @@ def signup(request):
 def delete_user(request):
     if request.method == 'POST':
         request.user.delete()
-        return redirect('home')
+        return redirect('main_view')
     else:
         return render(request, 'mypage8_2.html')
 
@@ -85,13 +86,13 @@ def delete_user(request):
 # 로그인
 def user_login(request):
     if request.method == 'POST':
-        username = request.POST.get('username')
+        id = request.POST.get('id')
         password = request.POST.get('password')
         # 암호화된 비밀번호로 사용자 인증
-        user = authenticate(username=username, password=password)
+        user = authenticate(id=id, password=password)
         if user is not None:
             login(request, user)
-            return redirect('home')
+            return redirect('main_view')
         else:
             return render(request, 'login.html', {'error': 'Invalid credentials'})
     else:
@@ -102,7 +103,7 @@ def user_login(request):
 @login_required
 def user_logout(request):
     logout(request)
-    return redirect('home')
+    return redirect('main_view')
 
 
 # 회원 정보 조회 및 수정
@@ -158,6 +159,47 @@ def user_profile(request):
 class TripDurationForm(forms.Form):
     start_date = forms.DateField(label = "여행 시작일")
     end_date = forms.DateField(label = "여행 종료일")
+
+
+# Dijkstra 알고리즘 - 최단 경로 계산
+def dijkstra(graph, start):
+    distances = {node: float('infinity') for node in graph}  # 모든 노드의 최단 경로 거리, 무한대로 초기화
+    distances[start] = 0  # 시작 노드의 최단 경로 거리 0으로 설정
+    priority_queue = [(0, start)]  # 우선순위 큐 생성, 시작 노드 추가
+    
+    while priority_queue:
+        # 우선 순위 큐에서 가장 작은 거리 가진 노드 꺼냄
+        current_distance, current_node = heapq.heappop(priority_queue)
+        
+        if current_distance > distances[current_node]:  # 발견된 최단 거리보다 크면 무시
+            continue
+        
+        # 현재 노드와 인접한 모든 노드 확인
+        for neighbor, weight in graph[current_node].items():  
+            distance = current_distance + weight
+            
+            # 기존보다 최단 경로 발견 시, 최단거리 & 우선순위 큐 업데이트
+            if distance < distances[neighbor]:
+                distances[neighbor] = distance
+                heapq.heappush(priority_queue, (distance, neighbor))
+    
+    return distances
+
+
+# 최단 경로 순서대로 여행지 정렬 및 반환
+def calculate_shortest_path(places):
+    graph = {}  # 그래프 초기환
+    for place in places:
+        graph[place.id] = {}
+        for neighbor in place.neighbors.all():
+            graph[place.id][neighbor.id] = place.distance_to(neighbor)
+    
+    start_place = places[0]  # 시작 장소를 첫 번째 장소로 설정
+    distances = dijkstra(graph, start_place.id)  # 시작 장소에서 모든 장소까지 최단 경로 계산
+    
+    # 최단 경로 기준으로 여행지 목록 정렬
+    sorted_places = sorted(places, key=lambda place: distances[place.id])
+    return sorted_places
 
 
 def main_view(request):
@@ -219,11 +261,13 @@ def main_view(request):
             placekeywords__kw_id__in=selected_keywords
         ).distinct()[:num_places_to_show]
 
-        map_markers = [{'lat': place.latitude, 'lng': place.longitude, 'name': place.name} for place in places]
+        sorted_places = calculate_shortest_path(places)
+
+        map_markers = [{'lat': place.latitude, 'lng': place.longitude, 'name': place.name} for place in sorted_places]
 
         return render(request, 'map.html', {
             'map_markers': map_markers,
-            'places': places,
+            'places': sorted_places,
         })
 
 
@@ -232,7 +276,7 @@ def place_detail(request, place_id):
     place = get_object_or_404(Place, place_id=place_id)
     is_liked = False
     if request.user.is_authenticated:
-        if Like.objects.filter(user_id=request.user, place_id=place).exists():
+        if Like.objects.filter(id=request.user, place_id=place).exists():
             is_liked = True
     return render(request, 'place_detail.html', {'place': place, 'is_liked': is_liked})
 
@@ -252,7 +296,7 @@ def like_place(request, place_id):
 # '좋아요' 목록 조회
 @login_required
 def view_likes(request):
-    liked_place = Like.objects.filter(user_id=request.user) 
+    liked_place = Like.objects.filter(id=request.user) 
     return render(request, 'view_likes.html', {'liked_place': liked_place})
 
 
@@ -261,7 +305,7 @@ def view_likes(request):
 def unlike_place(request, place_id):
     if request.method == 'POST':
         place = Place.objects.get(pk=place_id)
-        Like.objects.filter(user_id=request.user, place_id=place).delete()
+        Like.objects.filter(id=request.user, place_id=place).delete()
         return JsonResponse({'message': "'좋아요'가 삭제되었습니다."})
     
 
