@@ -19,6 +19,9 @@ router.register(r'place-keywords', PlaceKeywordViewSet)
 router.register(r'user-keywords', UserKeywordViewSet)
 
 urlpatterns = [
+    # 메인 뷰 (여행 계획 단계별 선택)
+    path('', views.main_view, name='main_view'),
+
     # 회원 가입
     path('signup/', views.signup, name='signup'),
 
@@ -33,10 +36,7 @@ urlpatterns = [
 
     # 회원 정보 조회 및 수정
     path('profile/', views.user_profile, name='profile'),
-
-    # 여행지 목록 조회
-    path('places/', views.place_list, name='place_list'),
-
+    
     # 여행지 세부 정보
     path('place/<int:place_id>/', views.place_detail, name='place_detail'),
 
@@ -49,7 +49,10 @@ urlpatterns = [
     # 좋아요 삭제
     path('unlike-place/<int:place_id>/', views.unlike_place, name='unlike_place'),
 
-    # 여행지 선택
+'''# 여행지 목록 조회
+    path('places/', views.place_list, name='place_list'),
+
+     # 여행지 선택
     path('place-select/', views.place_select, name='place_select'),
 
     # 여행지 타입 선택
@@ -60,4 +63,6 @@ urlpatterns = [
 
     # 지도에 여행지 표시
     path('show-places-on-map/', views.show_places_on_map, name='show_places_on_map'),
+'''
+   
 ]
