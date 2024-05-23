@@ -307,8 +307,6 @@ def unlike_place(request, place_id):
         place = Place.objects.get(pk=place_id)
         Like.objects.filter(id=request.user, place_id=place).delete()
         return JsonResponse({'message': "'좋아요'가 삭제되었습니다."})
-    
-
 
 '''
 # 여행지 선택
@@ -330,7 +328,7 @@ def place_list(request):
             filtered_places = filtered_places.filter(place_name__in=selected_keywords)
         return render(request, 'place_list.html', {'places': filtered_places, 'regions': regions, 'place_types': place_types})
     return render(request, 'place_list.html', {'places': places, 'regions': regions, 'place_types': place_types})
-
+// --> 원래도 주석처리된 부분
 
 
 # 여행 지역 선택
@@ -422,4 +420,7 @@ def show_places_on_map(request):
             return render(request, 'map.html', {'map_markers': map_markers})
     
     return render(request, 'map.html', {'trip_duration_form': trip_duration_form})
-'''
+
+'''    
+
+
