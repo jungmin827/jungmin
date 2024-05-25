@@ -10,15 +10,15 @@
 ## 기술 스택
 
 ### 프론트엔드
-<img width="30%" src="https://github.com/jungmin827/jungmin/assets/165762129/97ca598f-87f4-4474-9b76-34e38b2f11cc">
+<img width="31%" src="https://github.com/jungmin827/jungmin/assets/165762129/97ca598f-87f4-4474-9b76-34e38b2f11cc">
 
 
 ### 백엔드
-<img width="45%" src="https://github.com/jungmin827/jungmin/assets/165762129/db3c1117-10b7-4e40-9026-ab973956738b">
+<img width="43%" src="https://github.com/jungmin827/jungmin/assets/165762129/db3c1117-10b7-4e40-9026-ab973956738b">
 
 
 ### 데이터베이스
-<img width="15%" src="https://github.com/jungmin827/jungmin/assets/165762129/3a7b9418-43d7-45b7-a389-fef790b8364c">
+<img width="13%" src="https://github.com/jungmin827/jungmin/assets/165762129/3a7b9418-43d7-45b7-a389-fef790b8364c">
 
 
 
