@@ -7,22 +7,6 @@
   또한, 사용자 친화적이고 직관적인 웹 인터페이스를 구현하고, 사용자는 사용자가 원하는 여행 지역 및 사용자의 관심사 설정을 통해 여행지를 검색하고 추천받을 수 있습니다.
 
 
-
-## 기술 스택
-
-### 프론트엔드
-<img width="31%" src="https://github.com/jungmin827/jungmin/assets/165762129/97ca598f-87f4-4474-9b76-34e38b2f11cc">
-
-
-### 백엔드
-<img width="43%" src="https://github.com/jungmin827/jungmin/assets/165762129/db3c1117-10b7-4e40-9026-ab973956738b">
-
-
-### 데이터베이스
-<img width="13%" src="https://github.com/jungmin827/jungmin/assets/165762129/3a7b9418-43d7-45b7-a389-fef790b8364c">
-
-
-
 ## 추천 알고리즘
 
 1. **여행지 추천**
@@ -49,10 +33,34 @@
 4. **관심 목록 관리**
    - 마음에 드는 여행지에 ‘좋아요’를 눌러 관심 목록에 추가
    - 관심 목록에 추가된 여행지 확인 및 관리
+  
+
+
+
+## 기술 스택
+
+### 프론트엔드
+<img width="31%" src="https://github.com/jungmin827/jungmin/assets/165762129/97ca598f-87f4-4474-9b76-34e38b2f11cc">
+
+
+### 백엔드
+<img width="43%" src="https://github.com/jungmin827/jungmin/assets/165762129/db3c1117-10b7-4e40-9026-ab973956738b">
+
+
+### 데이터베이스
+<img width="13%" src="https://github.com/jungmin827/jungmin/assets/165762129/3a7b9418-43d7-45b7-a389-fef790b8364c">
+
+
+## 시스템 구성도
+<img width="80%" src="https://github.com/jungmin827/jungmin/assets/165762129/863aec09-cf4f-4491-98c8-91d7015aab9a">
 
 
 
 
+
+
+
+## 작품 포스터
 <p align="center">
   <img width="50%" src="https://github.com/jungmin827/jungmin/assets/165762129/a5feecd3-577d-44f7-beca-c995fd7210e7">
 </p>
