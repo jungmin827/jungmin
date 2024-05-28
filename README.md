@@ -68,8 +68,9 @@
 <br>
 
 ## 시스템 구성도
-<img width="80%" src="https://github.com/jungmin827/jungmin/assets/165762129/863aec09-cf4f-4491-98c8-91d7015aab9a">
-
+<p align="center">
+  <img width="80%" src="https://github.com/jungmin827/jungmin/assets/165762129/863aec09-cf4f-4491-98c8-91d7015aab9a">
+</p>
 
 
 
