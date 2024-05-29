@@ -46,7 +46,9 @@
 <br>
 
 ## API 명세서
-
+<p align="center">
+  <img width="100%" src="https://github.com/jungmin827/jungmin/assets/165762129/c89209e4-b167-4027-a9bd-d5540de27805">
+</p>
 
 
 <br>
