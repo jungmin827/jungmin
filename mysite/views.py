@@ -12,7 +12,8 @@ from .models import *
 from .serializers import *
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
-import bcrypt
+# import bcrypt
+from django.contrib.auth.hashers import make_password
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -61,10 +62,13 @@ def signup(request):
         form = CustomUserCreationForm(request.POST, request.FILES)
         if form.is_valid():
             user = form.save(commit=False)
-            password = form.cleaned_data['password1']
+            user.password = make_password(form.cleaned_data['password1'])
+            # password = form.cleaned_data['password1']
+
             # 비밀번호 암호화
-            hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-            user.set_password(hashed_password)
+            '''hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+            user.set_password(hashed_password)'''
+            
             user.save()
             login(request, user)
             return redirect('main_view')
