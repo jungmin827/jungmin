@@ -139,3 +139,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'mysite.User'
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',  # React 앱의 URL
+]
