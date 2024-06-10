@@ -2,22 +2,49 @@ import datetime
 import heapq
 from pyexpat.errors import messages
 from django import forms
-from django.http import JsonResponse # type: ignore
-from django.contrib.auth.decorators import login_required # type: ignore
-from django.shortcuts import get_object_or_404, redirect, render # type: ignore
-from django.contrib.auth import authenticate, login, logout # type: ignore
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib.auth import authenticate, login, logout
 from mysite.forms import CustomUserCreationForm
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.decorators import action, api_view
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+import bcrypt
 from .models import *
 from .serializers import *
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
-# import bcrypt
-from django.contrib.auth.hashers import make_password
+from rest_framework.decorators import api_view, permission_classes
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([])
+def signup(request):
+    print("Received data:", request.data)  # 수신한 데이터 출력
+    serializer = UserSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save()
+        return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
+    else:
+        print("Errors:", serializer.errors)  # 오류 메시지 출력
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['put'], permission_classes=[IsAuthenticated])
+    def update_profile(self, request):
+        user = request.user
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(UserSerializer(user).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class PlaceViewSet(viewsets.ModelViewSet):
     queryset = Place.objects.all()
@@ -32,50 +59,32 @@ class PlaceTypeViewSet(viewsets.ModelViewSet):
     serializer_class = PlaceTypeSerializer  
 
 class PlaceKeywordViewSet(viewsets.ModelViewSet):
-   queryset = PlaceKeyword.objects.all()
-   serializer_class = PlaceSerializer    
+    queryset = PlaceKeyword.objects.all()
+    serializer_class = PlaceKeywordSerializer    
 
 class RegionViewSet(viewsets.ModelViewSet):
-   queryset = Region.objects.all()
-   serializer_class = RegionSerializer 
+    queryset = Region.objects.all()
+    serializer_class = RegionSerializer 
 
 class LikeViewSet(viewsets.ModelViewSet):
-   queryset = Like.objects.all()
-   serializer_class = LikeSerializer 
+    queryset = Like.objects.all()
+    serializer_class = LikeSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user)
 
 class TestQViewSet(viewsets.ModelViewSet):
-   queryset = TestQ.objects.all()
-   serializer_class = TestQSerializer 
+    queryset = TestQ.objects.all()
+    serializer_class = TestQSerializer 
 
 class KeywordViewSet(viewsets.ModelViewSet):
-   queryset = Keyword.objects.all()
-   serializer_class = KeywordSerializer 
+    queryset = Keyword.objects.all()
+    serializer_class = KeywordSerializer 
 
 class UserKeywordViewSet(viewsets.ModelViewSet):
-   queryset = UserKeyword.objects.all()
-   serializer_class = UserKeywordSerializer 
-
-
-# 회원 가입
-def signup(request):
-    if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST, request.FILES)
-        if form.is_valid():
-            user = form.save(commit=False)
-            user.password = make_password(form.cleaned_data['password1'])
-            # password = form.cleaned_data['password1']
-
-            # 비밀번호 암호화
-            '''hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-            user.set_password(hashed_password)'''
-            
-            user.save()
-            login(request, user)
-            return redirect('main_view')
-    else:
-        form = CustomUserCreationForm()
-    return render(request, 'signup.html', {'form': form})
-        
+    queryset = UserKeyword.objects.all()
+    serializer_class = UserKeywordSerializer 
 
 # 회원 탈퇴
 @login_required
@@ -86,22 +95,18 @@ def delete_user(request):
     else:
         return render(request, 'mypage8_2.html')
 
-
 # 로그인
+@csrf_exempt
+@api_view(['POST'])
 def user_login(request):
-    if request.method == 'POST':
-        id = request.POST.get('id')
-        password = request.POST.get('password')
-        # 암호화된 비밀번호로 사용자 인증
-        user = authenticate(id=id, password=password)
-        if user is not None:
-            login(request, user)
-            return redirect('main_view')
-        else:
-            return render(request, 'login.html', {'error': 'Invalid credentials'})
+    username = request.data.get('username')
+    password = request.data.get('password')
+    user = authenticate(request, username=username, password=password)
+    if user is not None:
+        login(request, user)
+        return JsonResponse({'message': '로그인 성공'}, status=200)
     else:
-        return render(request, 'login.html')
-    
+        return JsonResponse({'error': 'Invalid credentials'}, status=401)
 
 # 로그아웃
 @login_required
@@ -109,25 +114,10 @@ def user_logout(request):
     logout(request)
     return redirect('main_view')
 
-
 # 회원 정보 조회 및 수정
-# '마이페이지' -> '내 정보'
-# '수정하기' 버튼 클릭 시 정보 수정 가능
 @login_required
 def user_profile(request):
     user = request.user
-    '''
-    if request.method == 'POST':
-        user.userid = request.POST.get('user_id')
-        user.username = request.POST.get('username')
-        user.email = request.POST.get('email')
-        user.profile.profile_image_url = request.FILES.get('profile_image')
-        user.profile.gender = request.POST.get('gender')
-        user.profile.user_birth = request.POST.get('birthday')
-        user.save()
-        return redirect('profile')
-    return render(request, 'user_profile.html', {'user': user})
-    '''
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST, instance=user)
         password_form = PasswordChangeForm(user, request.POST)
@@ -139,13 +129,10 @@ def user_profile(request):
             user.profile.gender = form.cleaned_data['gender']
             user.profile.birthday = form.cleaned_data['birthday']
             user.save()  
-
-            # 비밀번호 변경
             new_password = password_form.cleaned_data['new_password1']
             if new_password:
                 user.set_password(new_password)
                 user.save()
-                # 세션 인증 업데이트
                 update_session_auth_hash(request, user)
                 messages.success(request, '회원 정보가 업데이트되었습니다.')
                 return redirect('profile')
@@ -158,12 +145,10 @@ def user_profile(request):
         password_form = PasswordChangeForm(user)
         return render(request, 'user_profile.html', {'user': user, 'form': form, 'password_form': password_form})
 
-
 # 여행 기간 선택 폼
 class TripDurationForm(forms.Form):
     start_date = forms.DateField(label = "여행 시작일")
     end_date = forms.DateField(label = "여행 종료일")
-
 
 # Dijkstra 알고리즘 - 최단 경로 계산
 def dijkstra(graph, start):
@@ -172,62 +157,54 @@ def dijkstra(graph, start):
     priority_queue = [(0, start)]  # 우선순위 큐 생성, 시작 노드 추가
     
     while priority_queue:
-        # 우선 순위 큐에서 가장 작은 거리 가진 노드 꺼냄
         current_distance, current_node = heapq.heappop(priority_queue)
-        
         if current_distance > distances[current_node]:  # 발견된 최단 거리보다 크면 무시
             continue
         
-        # 현재 노드와 인접한 모든 노드 확인
         for neighbor, weight in graph[current_node].items():  
             distance = current_distance + weight
             
-            # 기존보다 최단 경로 발견 시, 최단거리 & 우선순위 큐 업데이트
             if distance < distances[neighbor]:
                 distances[neighbor] = distance
                 heapq.heappush(priority_queue, (distance, neighbor))
     
     return distances
 
-
 # 최단 경로 순서대로 여행지 정렬 및 반환
 def calculate_shortest_path(places):
-    graph = {}  # 그래프 초기환
+    graph = {}
     for place in places:
         graph[place.id] = {}
         for neighbor in place.neighbors.all():
             graph[place.id][neighbor.id] = place.distance_to(neighbor)
     
-    start_place = places[0]  # 시작 장소를 첫 번째 장소로 설정
-    distances = dijkstra(graph, start_place.id)  # 시작 장소에서 모든 장소까지 최단 경로 계산
-    
-    # 최단 경로 기준으로 여행지 목록 정렬
+    start_place = places[0]
+    distances = dijkstra(graph, start_place.id)
     sorted_places = sorted(places, key=lambda place: distances[place.id])
     return sorted_places
-
 
 def main_view(request):
     if request.method == 'POST':
         step = request.POST.get('step')
         
-        if step == '1':  # 여행지 선택
+        if step == '1':
             region_id = request.POST.get('region')
             request.session['region_id'] = region_id
             return redirect('main_view')
         
-        elif step == '2':  # 여행 기간 선택
+        elif step == '2':
             start_date = request.POST.get('start_date')
             end_date = request.POST.get('end_date')
             request.session['start_date'] = start_date
             request.session['end_date'] = end_date
             return redirect('main_view')
         
-        elif step == '3':  # 여행 타입 선택
+        elif step == '3':
             place_type_id = request.POST.get('type')
             request.session['place_type_id'] = place_type_id
             return redirect('main_view')
         
-        elif step == '4':  # 타입별 키워드 선택
+        elif step == '4':
             selected_keywords = request.POST.getlist('keywords')
             request.session['keywords'] = selected_keywords
             return redirect('main_view')
@@ -237,7 +214,6 @@ def main_view(request):
     end_date = request.session.get('end_date')
     place_type_id = request.session.get('place_type_id')
     selected_keywords = request.session.get('keywords')
-
     if not region_id:
         regions = Region.objects.all()
         return render(request, 'place_select.html', {'regions': regions, 'step': 1})
@@ -252,7 +228,6 @@ def main_view(request):
     elif not selected_keywords:
         keywords = Keyword.objects.filter(placekeywords__type_id=place_type_id).distinct()
         return render(request, 'keyword_select.html', {'keywords': keywords, 'step': 4})
-
     else:
         start_date = datetime.strptime(start_date, '%Y-%m-%d')
         end_date = datetime.strptime(end_date, '%Y-%m-%d')
@@ -264,16 +239,12 @@ def main_view(request):
             type_id=place_type_id,
             placekeywords__kw_id__in=selected_keywords
         ).distinct()[:num_places_to_show]
-
         sorted_places = calculate_shortest_path(places)
-
         map_markers = [{'lat': place.latitude, 'lng': place.longitude, 'name': place.name} for place in sorted_places]
-
         return render(request, 'map.html', {
             'map_markers': map_markers,
             'places': sorted_places,
         })
-
 
 # 여행지 세부 정보
 def place_detail(request, place_id):
@@ -283,7 +254,6 @@ def place_detail(request, place_id):
         if Like.objects.filter(id=request.user, place_id=place).exists():
             is_liked = True
     return render(request, 'place_detail.html', {'place': place, 'is_liked': is_liked})
-
 
 # '좋아요' 기능
 @login_required
@@ -296,13 +266,11 @@ def like_place(request, place_id):
         else:
             return JsonResponse({'message': "이미 '좋아요'를 누른 항목입니다."})
 
-
 # '좋아요' 목록 조회
 @login_required
 def view_likes(request):
     liked_place = Like.objects.filter(id=request.user) 
     return render(request, 'view_likes.html', {'liked_place': liked_place})
-
 
 # '좋아요' 삭제
 @login_required
@@ -312,119 +280,5 @@ def unlike_place(request, place_id):
         Like.objects.filter(id=request.user, place_id=place).delete()
         return JsonResponse({'message': "'좋아요'가 삭제되었습니다."})
 
-'''
-# 여행지 선택
-def place_list(request):
-    places = Place.objects.all()
-    regions = Region.objects.all()
-    place_types = PlaceType.objects.all()
-
-    if request.method == 'POST':
-        selected_region = request.POST.get('region')
-        selected_type = request.POST.get('place_type')
-        selected_keywords = request.POST.getlist('keywords')
-        filtered_places = places
-        if selected_region:
-            filtered_places = filtered_places.filter(region_id__region_addr=selected_region)
-        if selected_type:
-            filtered_places = filtered_places.filter(type_id__type_name=selected_type)
-        if selected_keywords:
-            filtered_places = filtered_places.filter(place_name__in=selected_keywords)
-        return render(request, 'place_list.html', {'places': filtered_places, 'regions': regions, 'place_types': place_types})
-    return render(request, 'place_list.html', {'places': places, 'regions': regions, 'place_types': place_types})
-// --> 원래도 주석처리된 부분
-
-
-# 여행 지역 선택
-def place_select(request):
-    if request.method == 'POST':
-        selected_region = request.POST.get('region')
-        if selected_region:
-            # 선택된 지역에 해당하는 여행지 타입 목록 가져오기
-            place_types = PlaceType.objects.filter(place__region_id__region_addr=selected_region).distinct()
-            return render(request, 'place_select.html', {'place_types': place_types})
-    # 모든 지역의 목록을 보여주기
-    regions = Region.objects.all()
-    return render(request, 'place_select.html', {'regions': regions})
-
-
-# 여행지 타입(place_type) 선택
-def type_select(request):
-    if request.method == 'POST':
-        selected_type = request.POST.get('type')
-        if selected_type:
-            # 선택된 타입에 해당하는 contents 가져오기
-            testq_contents = TestQ.objects.filter(placekeywords__type_id__type_name=selected_type).distinct()
-            # 해당 타입의 keyword 목록 가져오기
-            keywords = Keyword.objects.filter(place_keywords__type_id__type_name=selected_type).distinct()
-            return render(request, 'type_select.html', {'testq_contents': testq_contents, 'keywords': keywords})
-    return render(request, 'type_select.html', {})
-
-
-# 선택한 타입 별 키워드(place_keyword) 선택
-def keyword_select(request):
-    if request.method == 'POST':
-        selected_keywords = request.POST.getlist('keywords')
-        if selected_keywords:
-            # 선택된 keyword에 해당하는 contents 가져오기
-            testq_contents = TestQ.objects.filter(placekeywords__kw_id__kw_name__in=selected_keywords).distinct()
-            # 선택된 keyword들에 해당하는 places 가져오기
-            places = Place.objects.filter(placekeywords__kw_id__kw_name__in=selected_keywords).distinct()
-            return render(request, 'keyword_select.html', {'testq_contents': testq_contents, 'places': places})
-    return render(request, 'keyword_select.html', {})
-
-
-# 여행지 목록 조회
-def place_list(request):
-    places = Place.objects.all()
-    regions = Region.objects.all()
-    place_types = PlaceType.objects.all()
-
-    # 여행 기간 선택 폼 생성
-    trip_duration_form = TripDurationForm(request.POST or None)
-
-    if request.method == 'POST':
-        # 여행 기간 폼 유효성 검사
-        if trip_duration_form.is_valid():
-            start_date = trip_duration_form.cleaned_data['start_date']
-            end_date = trip_duration_form.cleaned_data['end_date']
-
-            # 선택한 여행 기간에 따라 여행지 목록 필터링
-            filtered_places = places.filter(suitable_for__gte=start_date, suitable_for__lte=end_date)
-            num_days = (end_date - start_date).days + 1
-            num_places_to_show = num_days * 3 + (num_days - 1)
-            filtered_places = filtered_places[:num_places_to_show]
-
-            # 여행지 목록과 여행 기간 폼을 템플릿에 전달
-            return render(request, 'place_list.html', {'places': filtered_places, 'regions': regions, 'place_types': place_types, 'trip_duration_form': trip_duration_form})
-    else:
-        # 여행 기간 폼과 여행지 목록을 템플릿에 전달
-        return render(request, 'place_list.html', {'places': places, 'regions': regions, 'place_types': place_types, 'trip_duration_form': trip_duration_form})
-
-
-# 여행지 목록을 지도에 표시
-def show_places_on_map(request):
-    # 여행 기간 선택 폼 생성
-    trip_duration_form = TripDurationForm(request.POST or None)
-
-    if request.method == 'POST':
-        # 여행 기간 폼 유효성 검사
-        if trip_duration_form.is_valid():
-            start_date = trip_duration_form.cleaned_data['start_date']
-            end_date = trip_duration_form.cleaned_data['end_date']
-
-            # 선택한 여행 기간에 따라 여행지 목록 필터링
-            filtered_places = Place.objects.filter(suitable_for__gte=start_date, suitable_for__lte=end_date)
-            num_days = (end_date - start_date).days + 1
-            num_places_to_show = num_days * 3 + (num_days - 1)
-            filtered_places = filtered_places[:num_places_to_show]
-
-            # 필터링된 추천 여행지를 지도에 표시
-            map_markers = [{'lat': place.latitude, 'lng': place.longitude} for place in filtered_places]
-            return render(request, 'map.html', {'map_markers': map_markers})
-    
-    return render(request, 'map.html', {'trip_duration_form': trip_duration_form})
-
-'''    
 
 
