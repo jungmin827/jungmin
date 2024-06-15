@@ -280,5 +280,3 @@ def unlike_place(request, place_id):
         Like.objects.filter(id=request.user, place_id=place).delete()
         return JsonResponse({'message': "'좋아요'가 삭제되었습니다."})
 
-
-
