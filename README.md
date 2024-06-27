@@ -65,5 +65,5 @@
 ## 작품 포스터
 <br>
 <p align="center">
-  <img width="60%" src="https://github.com/jungmin827/jungmin/assets/165762129/a5feecd3-577d-44f7-beca-c995fd7210e7">
+  <img width="60%" src="https://github.com/jungmin827/jungmin/assets/165762129/41f76a83-7466-4703-bf58-78103aac539c">
 </p>
